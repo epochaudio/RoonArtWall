@@ -1,0 +1,17 @@
+version: '3.8'
+
+services:
+  roon-art:
+    build:
+      context: .
+      tags:
+        - "epochaudio/roon-art:latest"
+        - "epochaudio/roon-art:2.0.3"
+    container_name: roon-art
+    user: "1000:1000"  # 使用node用户的UID:GID
+    volumes:
+      - ./art:/app/art
+    ports:
+      - "3090:3090"
+    restart: unless-stopped
+    network_mode: host  # Roon发现需要使用主机网络 
