@@ -1,0 +1,226 @@
+:root {
+    --card-width: 200px;
+    --card-height: 200px;
+    --flip-duration: 3s;
+    --grid-gap: 0px;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html, body {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background: #000;
+    margin: 0;
+    padding: 0;
+}
+
+.art-wall {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: var(--grid-gap);
+    background: #000;
+    width: 100vw;
+    height: 100vh;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+}
+
+.art-wall img {
+    width: 100%;
+    aspect-ratio: 1;
+    object-fit: contain;
+    cursor: pointer;
+    transition: transform 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.art-wall img:hover {
+    transform: none;
+    z-index: auto;
+    box-shadow: none;
+}
+
+.fullscreen {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: #000;
+    z-index: 1000;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.fullscreen img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+}
+
+.album-card {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    transform-style: preserve-3d;
+    transition: transform var(--flip-duration) ease-in-out;
+}
+
+.album-card.flip {
+    transform: rotateY(180deg);
+}
+
+.album-card-front,
+.album-card-back {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    backface-visibility: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+}
+
+.album-card-back {
+    transform: rotateY(180deg);
+}
+
+.album-container {
+    position: relative;
+    width: 100%;
+    height: 0;
+    padding-bottom: 100%; /* 保持1:1的宽高比 */
+    background: #000;
+    overflow: hidden;
+    transition: transform 0.3s ease-in-out;
+}
+
+.album-inner {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #000;
+}
+
+.album-cover {
+    max-width: 100%;
+    max-height: 100%;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    opacity: 0;
+    transition: all 0.3s ease-in-out;
+    padding: 0;
+    margin: 0;
+    border-radius: 4px;
+    border: 5px solid #000;
+}
+
+.album-cover.loaded {
+    opacity: 1;
+}
+
+/* 全屏模式样式 */
+.art-wall:fullscreen,
+.art-wall:-webkit-full-screen,
+.art-wall:-moz-full-screen,
+.art-wall:-ms-fullscreen {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+    gap: var(--grid-gap);
+    width: 100vw;
+    height: 100vh;
+    background: #000;
+    margin: 0;
+    padding: 0;
+}
+
+/* 移除所有悬停效果，保持简洁 */
+.album-cover:hover {
+    transform: none;
+    box-shadow: none;
+}
+
+/* 错误状态样式 */
+.error {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: #ff6b6b;
+    background: rgba(0, 0, 0, 0.8);
+    padding: 20px;
+    border-radius: 4px;
+    z-index: 1000;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+.album-cover.loaded {
+    animation: fadeIn 0.3s ease-in-out forwards;
+}
+
+/* 添加加载和错误状态的样式 */
+.loading,
+.error {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    padding: 20px;
+    background: rgba(0, 0, 0, 0.8);
+    color: #fff;
+    border-radius: 8px;
+    text-align: center;
+    font-size: 16px;
+}
+
+.error {
+    color: #ff6b6b;
+    border: 1px solid #ff6b6b;
+}
+
+/* 全屏模式样式 */
+.art-wall:fullscreen {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0;
+    background: #000;
+    width: 100vw;
+    height: 100vh;
+}
+
+/* 兼容性前缀 */
+.art-wall:-webkit-full-screen,
+.art-wall:-moz-full-screen,
+.art-wall:-ms-fullscreen {
+    width: 100vw;
+    height: 100vh;
+    grid-template-columns: repeat(3, 1fr);
+} 
