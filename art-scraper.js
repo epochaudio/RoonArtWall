@@ -38,8 +38,7 @@ var roon = new RoonApi({
 
 var scrape_settings = roon.load_config("settings") || {
     image_size: 'MEDIUM',
-    max_images: 1000,
-    refresh_interval: 20 // 默认20秒
+    max_images: 1000
 };
 
 const IMAGE_SIZES = {
@@ -82,15 +81,6 @@ function makelayout(settings) {
             min:     1,
             max:     10000,
             setting: "max_images"
-        });
-
-        l.layout.push({
-            type:    "integer",
-            title:   "图片刷新间隔（秒）",
-            min:     10,
-            max:     3600,
-            setting: "refresh_interval",
-            value:   settings.refresh_interval || 60
         });
     } else {
         l.layout.push({
@@ -292,11 +282,6 @@ var svc_settings = new RoonApiSettings(roon, {
         req.send_complete(l.has_error ? "NotValid" : "Success", { settings: l });
 
         if (!isdryrun && !l.has_error) {
-            // 确保refresh_interval是数字类型
-            if (typeof settings.values.refresh_interval === 'string') {
-                settings.values.refresh_interval = parseInt(settings.values.refresh_interval, 10) || 60;
-            }
-            
             scrape_settings = l.values;
             svc_settings.update_settings(l);
             roon.save_config("settings", scrape_settings);
