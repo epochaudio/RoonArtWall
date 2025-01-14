@@ -5,12 +5,13 @@ services:
     build:
       context: .
       tags:
-        - "epochaudio/roon-art:latest"
-        - "epochaudio/roon-art:2.0.3"
-    container_name: roon-art
+        - "epochaudio/roon-art:portrait"
+       
+    container_name: roon-art-portrait
     user: "1000:1000"  # 使用node用户的UID:GID
     volumes:
-      - ./art:/app/art
+      - ./art/Albums:/app/art/Albums
+      - ./.roondata:/app/.roondata
     ports:
       - "3090:3090"
     restart: unless-stopped

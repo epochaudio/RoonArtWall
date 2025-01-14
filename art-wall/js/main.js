@@ -4,9 +4,11 @@ class ArtWall {
         this.albums = [];
         this.currentBatch = new Set();
         this.imagePool = new Map();
-        this.updateInterval = 60000; // 默认60秒
+        this.updateInterval = 20000; // 默认20秒
         this.maxPoolSize = 100;
-        this.apiBaseUrl = 'http://localhost:3090';
+        // 使用相对路径，这样会自动使用当前访问的主机地址
+        this.apiBaseUrl = '';
+        console.log('使用相对路径访问API'); // 添加日志
         this.updateTimer = null;
         this.init();
     }
@@ -25,26 +27,34 @@ class ArtWall {
 
     async loadSettings() {
         try {
-            const response = await fetch(`${this.apiBaseUrl}/api/settings`);
+            const response = await fetch('/api/settings');
             if (!response.ok) {
                 throw new Error('获取设置失败');
             }
             
             const data = await response.json();
+            console.log('收到的设置数据:', data); // 添加日志
+            
             if (data.success && data.settings) {
-                this.updateInterval = data.settings.refresh_interval * 1000; // 转换为毫秒
+                const interval = parseInt(data.settings.refresh_interval, 10);
+                this.updateInterval = interval * 1000; // 转换为毫秒
                 console.log(`设置刷新间隔为 ${this.updateInterval/1000} 秒`);
+                
+                // 如果定时器已经存在，重新启动它
+                if (this.updateTimer) {
+                    this.startUpdateCycle();
+                }
             }
         } catch (error) {
             console.error('加载设置失败:', error);
             // 使用默认值
-            this.updateInterval = 60000;
+            this.updateInterval = 20000;
         }
     }
 
     async loadAlbums() {
         try {
-            const response = await fetch(`${this.apiBaseUrl}/api/albums`);
+            const response = await fetch('/api/albums');
             if (!response.ok) {
                 throw new Error('获取专辑列表失败');
             }
@@ -197,7 +207,7 @@ class ArtWall {
 
         try {
             // 获取要更新的随机专辑
-            const response = await fetch(`${this.apiBaseUrl}/api/albums/random?count=${Math.floor(this.totalCards * 0.2)}`);
+            const response = await fetch(`/api/albums/random?count=${Math.floor(this.totalCards * 0.2)}`);
             if (!response.ok) {
                 throw new Error('获取随机专辑失败');
             }

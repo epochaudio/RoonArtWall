@@ -1,41 +1,76 @@
-# Roon 艺术墙：优雅地展示您的音乐收藏
 
-[![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
+# Roon 艺术墙 - 竖屏版
 
-**Roon 艺术墙**是一个旨在为您的 Roon 音乐库带来沉浸式视觉体验的系统。它通过优雅的 3D 翻转动画效果，将您的专辑封面转化为引人入胜的动态艺术墙。
+[![Docker Pulls](https://img.shields.io/docker/pulls/epochaudio/roon-art.svg)](https://hub.docker.com/r/epochaudio/roon-art)
+[![GitHub Stars](https://img.shields.io/github/stars/your-username/your-repo.svg)](https://github.com/your-username/your-repo)
+<!-- 请替换为你的 GitHub 用户名和仓库名 -->
 
-## ✨ 核心特性
+## 简介
 
-* **全屏自适应布局：** 完美适配各种屏幕尺寸，自动调整专辑封面排列。
-* **动态刷新：** 每 60 秒自动更新一批新的专辑封面，保持新鲜感。
-* **炫酷翻转效果：** 采用独特的 3D 扑克牌翻转动画，增添视觉趣味。
-* **卓越性能：**
-    * **图片预加载：** 确保流畅的浏览体验。
-    * **智能缓存：** 减少资源消耗，加快加载速度。
-    * **批量 DOM 更新：** 提升渲染效率。
-    * **懒加载：** 优化初始加载性能。
+Roon 艺术墙是一个为 22 寸竖屏显示器（分辨率 1080x1920）量身定制的专辑封面展示系统。它能够优雅地展示您的 Roon 音乐库中的专辑封面，并配有令人赏心悦目的 3D 翻转动画效果。
 
-## 🚀 快速上手
+**核心理念：让您的画屏焕发新生，成为展示您音乐品味的艺术画廊。**
 
-以下是快速启动 Roon 艺术墙的几种方式。推荐使用 Docker 方式以获得最便捷的体验。
+## 主要特性
 
-### 🐳 使用 Docker (推荐)
+- **专属竖屏：** 完美适配 22 寸 1080x1920 竖屏显示器。
+- **经典布局：** 采用 3x5 网格，一次展示 15 张精选专辑封面。
+- **动感十足：** 优雅的 3D 翻转动画，并错开更新时间，避免视觉疲劳。
+- **自动刷新：** 每 60 秒自动更新 3 张封面，带来持续的新鲜感。
+- **性能卓越：** 优化的内存管理和动画性能，确保流畅运行。
+- **稳定可靠：** 专为 7x24 小时稳定运行设计。
+
+## 系统要求
+
+- **显示设备：** 22 寸竖屏显示器 (1080x1920 分辨率)
+- **浏览器：** 推荐定制webview显示
+- **网络：** 可访问本地 Roon API
+- **存储：** 建议预留至少 10GB 空间用于存储专辑封面
+
+## 安装指南
+
+我们推荐使用 Docker 进行安装，这将大大简化部署过程。
+
+### 1. 准备工作
+
+- 确保已安装 [Docker](https://www.docker.com/get-started/) 和 [Docker Compose](https://docs.docker.com/compose/install/)。
+- 确保您的 Roon Core 正在运行。
+- 准备好您的 22 寸竖屏显示器。
+
+### 2. 配置 Roon 艺术图片目录
+
+你需要将 Roon Core 的艺术图片目录挂载到 Docker 容器中。
+
+**找到 Roon 艺术图片目录：**
+
+- **Windows:** `C:\Users\YourUsername\AppData\Local\Roon\Application Data\Roon\art`
+- **macOS:** `/Users/YourUsername/Library/Application Support/Roon/Application Data/Roon/art`
+- **Linux:** `/home/YourUsername/.roon/Application Data/Roon/art`
+
+**创建必要的目录（如果不存在）：**
+
+```bash
+mkdir -p /path/to/your/Roon/art/Albums  # 可选，如果你的艺术刮刀将图片放在 Albums 子目录下
+chmod -R 755 /path/to/your/Roon/art
+```
+
+**⚠️ 重要：请将 `/path/to/your/Roon/art` 替换为您的实际 Roon 艺术图片目录。**
+
+### 3. 使用 Docker (推荐)
 
 #### 方式一：使用 `docker run` 命令
-
-这是最快速启动的方式。只需将 `/path/to/your/Roon/art` 替换为您 Roon 艺术图片的实际目录。
 
 ```bash
 docker run -d \
   --name roon-art \
   -p 3090:3090 \
-  -v /path/to/your/Roon/art:/app/art  \
+  -v /path/to/your/Roon/art:/app/art \
   # ⚠️ 重要：请替换为您的 Roon 艺术图片目录
   --restart unless-stopped \
   epochaudio/roon-art:latest
 ```
 
-#### 方式二：使用 `docker-compose`
+#### 方式二：使用 `docker-compose.yml`
 
 1. **创建 `docker-compose.yml` 文件：**
 
@@ -47,7 +82,7 @@ docker run -d \
        ports:
          - "3090:3090"
        volumes:
-         - /path/to/your/Roon/art:/app/art  # ⚠️ 重要：请替换为您的 Roon 艺术图片目录
+         - /path/to/your/Roon/art:/app/art
        restart: unless-stopped
    ```
 
@@ -57,207 +92,84 @@ docker run -d \
    docker-compose up -d
    ```
 
-### ⚙️  配置 Roon Core
+## Roon Core 设置
 
-启动容器后，您需要在 Roon Core 中进行以下设置：
+为了让 Roon 艺术墙工作，您需要在 Roon Core 中启用并配置“艺术刮刀”扩展。
 
-1. **启用“艺术刮刀”扩展：** 打开 Roon Core 设置，找到并启用该扩展。
-2. **配置扩展设置：**
-   - **图片质量：** 建议选择“高质量”以获得最佳显示效果。
-   - **下载数量：** 建议设置为 1000-5000 张，以获得丰富的艺术墙内容。
-3. **开始下载封面：** 在 Roon 界面上启动封面下载过程。您将看到下载进度。
+### 1. 启用艺术刮刀扩展
 
-### 🖼️  欣赏艺术墙
+1. 打开您的 Roon Core 控制端。
+2. 进入 "设置" -> "扩展"。
+3. 找到并启用 "艺术刮刀" 扩展。
 
-1. **等待封面下载完成：**  首次下载可能需要一些时间，具体取决于您的网络速度和选择的下载数量。请耐心等待。
-2. **访问艺术墙：**  封面下载完成后，打开浏览器并访问 `http://localhost:3090`。
-3. **尽情享受：**  您的专辑艺术墙现在应该可以正常显示了！
+### 2. 配置艺术刮刀扩展
 
-**⚠️ 重要提示：**
+- **图片质量选择：**
+    - 小图：225x225 像素
+    - 中图：500x500 像素 (推荐)
+    - 大图：1000x1000 像素
+- **下载数量：** 建议设置为 1000-2000 张。
+- **刷新间隔：** 保持默认的 60 秒即可。
 
-* **必须等待封面下载完成** 后再访问艺术墙，否则可能无法显示图片。
-* **首次下载需要时间**，请耐心等待。
-* **确保有足够的存储空间** 来存放下载的封面图片。
-* **目录映射必须正确配置**，Docker 才能访问您的 Roon 艺术图片。
-* **Roon 艺术图片目录通常位于：**
-    * **Windows:** `C:\Users\YourUsername\AppData\Local\Roon\Application Data\Roon\art`
-    * **macOS:** `/Users/YourUsername/Library/Application Support/Roon/Application Data/Roon/art`
-    * **Linux:** `/home/YourUsername/.roon/Application Data/Roon/art`
-* **请确保 Docker 容器有读取您 Roon 艺术图片目录的权限。**
+## 使用指南
 
-### 🛠️  源码构建 (面向开发者)
+### 1. 首次使用
 
-1. **克隆仓库：**
+1. 等待艺术刮刀完成初始专辑封面下载 (这可能需要 30-60 分钟，取决于您的音乐库大小)。
+2. 在您的浏览器中访问 `http://<您的 Roon Core IP 地址>:3090` 或 `http://localhost:3090` (如果艺术墙和 Roon Core 运行在同一台机器上)。
+3. 确认艺术墙是否正常显示并自动更新专辑封面。
 
-   ```bash
-   git clone https://github.com/epochaudio/RoonArtWall.git
-   cd RoonArtWall
-   ```
+### 2. 日常使用
 
-2. **使用 Docker Compose 构建并启动：**
+- 保持浏览器窗口或标签页处于打开状态，以便艺术墙持续运行。
+- 避免手动刷新页面，艺术墙会自动更新。
+- 为了获得最佳展示效果，请避免在显示器上进行鼠标或触摸操作。
 
-   ```bash
-   docker-compose up -d --build
-   ```
+### 3. 故障排除
 
-3. **访问：** `http://localhost:3090`
+- **页面显示空白：**
+    - 检查您在 Docker 命令或 `docker-compose.yml` 文件中挂载的图片目录路径是否正确。
+    - 确保该目录及其内容具有读取权限。
+- **图片没有更新：**
+    - 检查您的网络连接是否正常。
+    - 确认 Roon Core 和艺术刮刀扩展正在运行。
+- **动画卡顿：**
+    - 检查运行艺术墙的设备的资源占用情况 (CPU、内存)。
+    - 尝试减少艺术刮刀下载的图片质量或数量。
+- **显示异常：**
+    - 尝试清除浏览器缓存并重新加载页面。
 
-### 🔨  手动安装
+## 技术特点
 
-如果您不想使用 Docker，可以手动安装。
+- **纯前端技术栈：** 基于 HTML5, CSS3 和原生 JavaScript 构建，无需后端服务。
+- **高性能动画：** 利用 CSS 3D Transform 和 GPU 加速实现流畅的翻转效果。
+- **智能缓存机制：** 图片池管理，优化内存使用，提升性能。
+- **错误恢复能力：** 内置自动检测和恢复机制，提高稳定性。
+- **专注展示：** 无用户交互设计，专注于提供沉浸式的视觉体验。
 
-1. **克隆仓库：**
+## 性能优化
 
-   ```bash
-   git clone https://github.com/yourusername/roon-art-wall.git
-   cd roon-art-wall
-   ```
+- 使用 `CSS will-change` 属性提前告知浏览器动画元素，提升渲染性能。
+- 采用 `transform-style: preserve-3d` 优化 3D 渲染效果。
+- 智能的图片预加载和缓存策略，减少加载时间。
+- 错峰更新动画，分散 GPU 负载，避免卡顿。
+- 及时清理不再使用的图片资源，释放内存。
 
-2. **安装依赖：**
+## 稳定性保障
 
-   ```bash
-   npm install
-   cd art-wall
-   npm install
-   cd ..
-   ```
+- 具备自动错误恢复机制，应对偶发异常。
+- 定期清理内存缓存，防止内存泄漏。
+- 图片加载失败时自动重试，确保展示完整性。
+- 系统状态监控，实现自动恢复。
 
-3. **启动服务：**
+## 维护说明
 
-   ```bash
-   npm start
-   ```
+- 本项目设计为开箱即用，无需人工干预。
+- 具备自动运行和恢复能力，降低维护成本。
+- 记录关键运行信息，方便问题排查。
+- 内置内存自动优化机制。
 
-4. **访问：** `http://localhost:3090`
+## 版权信息
 
-## 🧑‍💻 开发指南
-
-### 📚 环境要求
-
-* **Node.js:** 20.x 或更高版本
-* **现代浏览器：** Chrome、Firefox、Safari 等
-* **硬件建议：** 推荐使用配备独立显卡的设备，以获得更流畅的动画效果。
-
-### 📂 目录结构
-
-```
-roon-art-wall/
-├── art/                # 存放 Roon 下载的图片
-│   ├── Albums/        # 专辑封面
-│   └── Artists/       # 艺术家图片
-├── art-wall/          # 前端应用
-│   ├── public/        # 静态资源
-│   └── server.js      # 简易前端服务器
-├── css/               # 样式文件
-├── js/                # JavaScript 文件
-└── art-scraper.js     # （可选）用于抓取 Roon 图片的脚本
-```
-
-### ✍️ 开发规范
-
-1. **代码风格：**
-   - 使用 ES6+ 特性。
-   - 遵循 ESLint 代码规范。
-   - 保持代码简洁易懂。
-2. **Git 提交规范：**
-   - `feat`: 新功能
-   - `fix`: Bug 修复
-   - `docs`: 文档变更
-   - `style`: 代码格式调整（不影响逻辑）
-   - `refactor`: 代码重构（不新增功能或修复 bug）
-   - `test`: 添加或修改测试用例
-   - `chore`: 构建过程或辅助工具的变动
-3. **参与贡献：**
-   - Fork 本仓库。
-   - 创建您的特性分支 (`git checkout -b feature/your-feature`)。
-   - 提交您的更改 (`git commit -m 'feat: 添加了很棒的功能'`)。
-   - 推送到分支 (`git push origin feature/your-feature`)。
-   - 提交 Pull Request。
-
-## 🖼️ 图片尺寸选项
-
-Roon “艺术刮刀”扩展允许您选择下载的图片尺寸：
-
-* **小图：** 225 x 225 像素
-* **中图：** 500 x 500 像素 (默认)
-* **大图：** 1000 x 1000 像素
-
-您需要在 Roon Core 的扩展设置中进行配置。
-
-## ⚙️ 配置说明 (手动安装)
-
-1. 启动程序后，在 Roon 设置中启用“艺术刮刀”扩展。
-2. 在扩展设置中，您可以配置：
-   - **下载类型：** 专辑或艺术家图片。
-   - **图片尺寸：** 如上所述。
-   - **最大图片数量：** 建议根据您的需求设置 (1-10000)。
-
-## 💾 下载位置 (手动安装)
-
-* **专辑封面：** `art/Albums/` 目录
-* **艺术家图片：** `art/Artists/` 目录
-
-## ⚠️ 注意事项
-
-* 图片文件名会自动过滤特殊字符。
-* 下载失败时会自动重试最多 3 次。
-* **强烈建议使用 Docker 方式运行**，以简化部署和管理。
-
-## 📜 版本历史
-
-* **v2.0.3**
-    * 优化图片加载性能
-    * 改进3D翻转动画效果
-    * 增加自动重试机制
-    * 完善错误处理
-* **v1.0.1**
-    * 添加最大图片数量限制
-    * 优化中文界面显示
-    * 改进错误处理机制
-* **v0.1.1**
-    * 初始版本发布
-
-## 📄 许可证
-
-本项目采用 [Apache License 2.0](LICENSE) 许可证。
-
-## 🤝 技术支持
-
-如有任何问题，请通过以下方式联系我们：
-
-* **邮箱：** sales@epochaudio.cn
-* **网站：** [https://www.epochaudio.cn](https://www.epochaudio.cn)
-
-## 🙏 致谢
-
-感谢 [Roon Labs](https://roonlabs.com/) 提供的出色 API 支持。
-感谢 [TheAppgineer/roon-extension-art-scraper](https://github.com/TheAppgineer/roon-extension-art-scraper) 项目提供的灵感。
-
-## 💡 关于艺术墙
-
-艺术墙是一个动态展示专辑封面的 Web 应用程序，旨在为您的音乐欣赏体验增添视觉上的享受。
-
-### 🌟 特点
-
-* **全屏自适应显示：** 根据屏幕尺寸自动调整图片布局，提供最佳观看体验。
-* **动态更新：** 每 60 秒自动更换一批新的专辑封面，保持新鲜感。
-* **扑克牌翻转效果：** 独特的 3D 翻转动画效果，让封面展示更具吸引力。
-* **性能优化：**
-    * **图片预加载机制：** 提前加载图片，确保流畅的动画效果。
-    * **智能缓存管理：** 有效利用浏览器缓存，减少资源请求。
-    * **批量 DOM 更新：** 减少页面重绘，提高渲染性能。
-    * **懒加载技术：** 仅加载当前可见的图片，优化初始加载速度。
-
-### 🛠️ 使用方法
-
-1. 确保已下载足够的专辑封面到 `art/Albums/` 目录。
-2. 启动服务器后，在浏览器中访问 `http://localhost:3090`。
-
-### 🖥️ 系统要求
-
-* **推荐使用现代浏览器：** Chrome、Firefox、Safari 等。
-* **不支持移动设备** (当前版本)。
-* **建议使用配备独立显卡的设备** 以获得最佳的动画效果。
-```
-
+Copyright © 2024 门耳朵科技
 
