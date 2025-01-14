@@ -41,18 +41,10 @@ Roon 艺术墙是一个为 22 寸竖屏显示器（分辨率 1080x1920）量身�
 
 你需要将 Roon Core 的艺术图片目录挂载到 Docker 容器中。
 
-**找到 Roon 艺术图片目录：**
 
-- **Windows:** `C:\Users\YourUsername\AppData\Local\Roon\Application Data\Roon\art`
-- **macOS:** `/Users/YourUsername/Library/Application Support/Roon/Application Data/Roon/art`
-- **Linux:** `/home/YourUsername/.roon/Application Data/Roon/art`
 
-**创建必要的目录（如果不存在）：**
 
-```bash
-mkdir -p /path/to/your/Roon/art/Albums  # 可选，如果你的艺术刮刀将图片放在 Albums 子目录下
-chmod -R 755 /path/to/your/Roon/art
-```
+
 
 **⚠️ 重要：请将 `/path/to/your/Roon/art` 替换为您的实际 Roon 艺术图片目录。**
 
@@ -115,7 +107,7 @@ docker run -d \
 
 ### 1. 首次使用
 
-1. 等待艺术刮刀完成初始专辑封面下载 (这可能需要 30-60 分钟，取决于您的音乐库大小)。
+1. 等待艺术刮刀完成初始专辑封面下载 (这可能需要一段时间，取决于您的音乐库大小)。
 2. 在您的浏览器中访问 `http://<您的 Roon Core IP 地址>:3090` 或 `http://localhost:3090` (如果艺术墙和 Roon Core 运行在同一台机器上)。
 3. 确认艺术墙是否正常显示并自动更新专辑封面。
 
