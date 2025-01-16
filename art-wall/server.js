@@ -13,6 +13,12 @@ app.use(cors({
     allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
+// 添加请求日志中间件
+app.use((req, res, next) => {
+    console.log(`${new Date().toISOString()} - ${req.method} ${req.url}`);
+    next();
+});
+
 // 静态文件服务 - 提供前端页面
 app.use(express.static(path.join(__dirname, '..')));
 
@@ -25,6 +31,17 @@ app.get('/api/albums', async (req, res) => {
         const albumsDir = '/app/art/Albums';
         console.log('读取目录:', albumsDir);
         
+        // 检查目录是否存在
+        try {
+            await fs.access(albumsDir);
+        } catch (err) {
+            console.error('专辑目录不存在:', err);
+            return res.status(500).json({
+                success: false,
+                error: '专辑目录不存在'
+            });
+        }
+        
         const files = await fs.readdir(albumsDir);
         console.log('找到文件数量:', files.length);
         
@@ -34,17 +51,27 @@ app.get('/api/albums', async (req, res) => {
         );
         console.log('图片文件数量:', imageFiles.length);
 
+        if (imageFiles.length === 0) {
+            return res.status(404).json({
+                success: false,
+                error: '未找到图片文件'
+            });
+        }
+
         // 随机打乱数组顺序
         const shuffledAlbums = imageFiles
             .map(value => ({ value, sort: Math.random() }))
             .sort((a, b) => a.sort - b.sort)
             .map(({ value }) => value);
         
-        res.json({
+        const response = {
             success: true,
             total: shuffledAlbums.length,
             albums: shuffledAlbums.map(file => `/art/Albums/${encodeURIComponent(file)}`)
-        });
+        };
+        
+        console.log('返回专辑数量:', response.total);
+        res.json(response);
     } catch (error) {
         console.error('读取专辑目录失败:', error);
         res.status(500).json({
@@ -94,19 +121,23 @@ app.get('/api/albums/random', async (req, res) => {
 app.get('/api/settings', async (req, res) => {
     try {
         // 从Roon配置文件读取设置
-        const roonSettingsPath = path.join(process.cwd(), '../.roondata/settings.json');
+        const roonSettingsPath = path.join(__dirname, '..', '.roondata', 'settings.json');
+        console.log('尝试读取设置文件:', roonSettingsPath); // 添加日志
+        
         let settings = {
             refresh_interval: 60 // 默认值
         };
         
         try {
             const data = await fs.readFile(roonSettingsPath, 'utf8');
+            console.log('读取到的设置文件内容:', data); // 添加日志
             const roonSettings = JSON.parse(data);
-            if (roonSettings && typeof roonSettings.refresh_interval === 'number') {
-                settings.refresh_interval = roonSettings.refresh_interval;
+            if (roonSettings && typeof roonSettings.refresh_interval !== 'undefined') {
+                settings.refresh_interval = parseInt(roonSettings.refresh_interval, 10) || 60;
+                console.log('解析后的刷新间隔:', settings.refresh_interval); // 添加日志
             }
         } catch (err) {
-            console.log('无法读取Roon设置，使用默认值');
+            console.error('读取设置文件失败:', err); // 改进错误日志
         }
         
         res.json({
@@ -127,6 +158,16 @@ app.get('/health', (req, res) => {
     res.json({ status: 'ok' });
 });
 
+// 错误处理中间件
+app.use((err, req, res, next) => {
+    console.error('服务器错误:', err);
+    res.status(500).json({
+        success: false,
+        error: '服务器内部错误'
+    });
+});
+
 app.listen(PORT, () => {
     console.log(`服务器运行在 http://localhost:${PORT}`);
+    console.log('专辑目录路径:', '/app/art/Albums');
 }); 

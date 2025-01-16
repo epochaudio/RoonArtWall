@@ -1,171 +1,185 @@
-document.addEventListener('DOMContentLoaded', () => {
-    const artWall = document.querySelector('.art-wall');
-    let isFullscreen = false;
-    let albumList = [];
-    let displayedAlbums = new Set(); // 跟踪已显示的图片
-    const API_BASE = ''; // 使用相对路径
-
-    // 切换全屏模式
-    function toggleFullscreen() {
-        if (!isFullscreen) {
-            if (artWall.requestFullscreen) {
-                artWall.requestFullscreen();
-            } else if (artWall.webkitRequestFullscreen) {
-                artWall.webkitRequestFullscreen();
-            } else if (artWall.msRequestFullscreen) {
-                artWall.msRequestFullscreen();
-            }
-        } else {
-            if (document.exitFullscreen) {
-                document.exitFullscreen();
-            } else if (document.webkitExitFullscreen) {
-                document.webkitExitFullscreen();
-            } else if (document.msExitFullscreen) {
-                document.msExitFullscreen();
-            }
-        }
+class ArtWall {
+    constructor() {
+        this.container = document.getElementById('art-wall');
+        this.covers = new Map();
+        this.imagePool = new Map();
+        this.maxPoolSize = 30;  // 最大缓存数量
+        this.updateInterval = 60000;  // 60秒更新
+        this.isUpdating = false;
+        this.init();
     }
 
-    // 监听全屏状态变化
-    document.addEventListener('fullscreenchange', () => {
-        isFullscreen = !!document.fullscreenElement;
-    });
-    document.addEventListener('webkitfullscreenchange', () => {
-        isFullscreen = !!document.webkitFullscreenElement;
-    });
-    document.addEventListener('msfullscreenchange', () => {
-        isFullscreen = !!document.msFullscreenElement;
-    });
-
-    // 获取专辑列表
-    async function fetchAlbumList(retryCount = 3) {
+    async init() {
         try {
-            const response = await fetch(`${API_BASE}/api/albums`);
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-            const data = await response.json();
-            if (data.success) {
-                albumList = data.albums;
-                console.log(`获取到专辑列表: ${albumList.length} 张`);
-            } else {
-                throw new Error('获取专辑列表失败');
-            }
+            await this.loadInitialCovers();
+            this.startUpdateCycle();
         } catch (error) {
-            console.error('获取专辑列表失败:', error);
-            if (retryCount > 0) {
-                console.log(`尝试重新获取，剩余重试次数: ${retryCount - 1}`);
-                await new Promise(resolve => setTimeout(resolve, 1000)); // 等待1秒后重试
-                return fetchAlbumList(retryCount - 1);
-            }
-            albumList = [];
+            console.error('初始化失败:', error);
+            this.attemptRecovery();
         }
     }
 
-    // 获取随机专辑（避免重复）
-    function getRandomAlbums(count = 9) {
-        if (!Array.isArray(albumList) || albumList.length === 0) {
-            console.warn('没有可用的专辑');
-            return [];
-        }
-
-        // 如果已显示的图片数量超过总数的80%，重置已显示列表
-        if (displayedAlbums.size > albumList.length * 0.8) {
-            displayedAlbums.clear();
-        }
-
-        const availableAlbums = albumList.filter(album => !displayedAlbums.has(album));
-        const selectedAlbums = [];
-        
-        // 如果可用专辑不足，使用全部可用专辑
-        if (availableAlbums.length <= count) {
-            selectedAlbums.push(...availableAlbums);
-            displayedAlbums.clear(); // 重置已显示列表
-        } else {
-            // 随机选择未显示过的专辑
-            while (selectedAlbums.length < count && availableAlbums.length > 0) {
-                const randomIndex = Math.floor(Math.random() * availableAlbums.length);
-                const album = availableAlbums.splice(randomIndex, 1)[0];
-                selectedAlbums.push(album);
-                displayedAlbums.add(album);
-            }
-        }
-
-        return selectedAlbums;
-    }
-
-    // 加载图片
-    async function loadImages() {
+    async loadInitialCovers() {
         try {
-            if (albumList.length === 0) {
-                await fetchAlbumList();
-            }
-
-            artWall.innerHTML = '';
-            const selectedAlbums = getRandomAlbums();
-
-            if (selectedAlbums.length === 0) {
-                artWall.innerHTML = '<div class="error">没有找到专辑封面</div>';
-                return;
-            }
-
-            selectedAlbums.forEach(albumPath => {
-                // 创建外部容器
-                const container = document.createElement('div');
-                container.className = 'album-container';
-                
-                // 创建内部容器
-                const inner = document.createElement('div');
-                inner.className = 'album-inner';
-                
-                // 创建图片
-                const img = document.createElement('img');
-                img.className = 'album-cover';
-                // 使用完整路径
-                img.src = albumPath;
-                img.alt = decodeURIComponent(albumPath.split('/').pop().replace('.jpg', ''));
-                
-                img.addEventListener('load', () => {
-                    console.log('图片加载成功:', albumPath);
-                    img.classList.add('loaded');
-                });
-                
-                img.addEventListener('error', (e) => {
-                    console.error('图片加载失败:', albumPath);
-                    console.log('尝试使用备用路径');
-                    // 尝试使用备用路径
-                    const backupPath = albumPath.replace('/art/Albums/', '/albums/');
-                    if (img.src !== backupPath) {
-                        img.src = backupPath;
-                    } else {
-                        img.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="200" height="200"%3E%3Crect width="100%25" height="100%25" fill="%23333"/%3E%3C/svg%3E';
-                    }
-                });
-
-                // 组装DOM结构
-                inner.appendChild(img);
-                container.appendChild(inner);
-                artWall.appendChild(container);
+            const covers = await this.fetchAlbumCovers(9);  // 固定9张图片
+            covers.forEach((coverUrl, index) => {
+                const position = index + 1;
+                this.createCoverElement(coverUrl, position);
             });
         } catch (error) {
-            console.error('加载图片失败:', error);
-            artWall.innerHTML = '<div class="error">加载图片失败</div>';
+            console.error('初始化封面失败:', error);
+            this.attemptRecovery();
         }
     }
 
-    // 点击事件监听
-    artWall.addEventListener('click', toggleFullscreen);
+    createCoverElement(imageUrl, position) {
+        const cover = document.createElement('div');
+        cover.className = 'album-cover';
+        cover.dataset.position = position;
 
-    // ESC键退出全屏
-    document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape' && isFullscreen) {
-            toggleFullscreen();
+        const front = document.createElement('div');
+        front.className = 'album-cover-front';
+        const back = document.createElement('div');
+        back.className = 'album-cover-back';
+
+        this.loadImage(imageUrl)
+            .then(img => {
+                front.appendChild(img);
+                this.imagePool.set(imageUrl, img);
+            })
+            .catch(() => {
+                console.error('加载图片失败:', imageUrl);
+                this.attemptRecovery();
+            });
+
+        cover.appendChild(front);
+        cover.appendChild(back);
+        this.container.appendChild(cover);
+        this.covers.set(position, cover);
+    }
+
+    async fetchAlbumCovers(count) {
+        try {
+            const response = await fetch('/api/albums');
+            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+            const data = await response.json();
+            return data.albums.slice(0, count);
+        } catch (error) {
+            console.error('获取专辑封面失败:', error);
+            throw error;
         }
-    });
+    }
 
-    // 加载初始图片
-    loadImages();
+    loadImage(url) {
+        return new Promise((resolve, reject) => {
+            const img = new Image();
+            const timeout = setTimeout(() => {
+                img.src = '';
+                reject(new Error('图片加载超时'));
+            }, 10000);
 
-    // 每30秒更新一次图片
-    setInterval(() => loadImages(), 30000);
+            img.onload = () => {
+                clearTimeout(timeout);
+                resolve(img);
+            };
+
+            img.onerror = () => {
+                clearTimeout(timeout);
+                reject(new Error(`加载图片失败: ${url}`));
+            };
+
+            img.src = url;
+        });
+    }
+
+    async updateRandomCovers() {
+        if (this.isUpdating) return;
+        
+        try {
+            this.isUpdating = true;
+            const positions = this.getRandomPositions(3);  // 每次更新3张
+            const newCovers = await this.fetchAlbumCovers(positions.length);
+            
+            for (let i = 0; i < positions.length; i++) {
+                const position = positions[i];
+                const cover = this.covers.get(position);
+                const newUrl = newCovers[i];
+                
+                if (cover && newUrl) {
+                    await this.flipCover(cover, newUrl);
+                    await new Promise(resolve => setTimeout(resolve, 200));  // 错开翻转时间
+                }
+            }
+            
+            this.cleanImagePool();
+        } catch (error) {
+            console.error('更新封面失败:', error);
+        } finally {
+            this.isUpdating = false;
+        }
+    }
+
+    getRandomPositions(count) {
+        const positions = Array.from(this.covers.keys());
+        const selected = new Set();
+        
+        while (selected.size < count) {
+            const randomIndex = Math.floor(Math.random() * positions.length);
+            const position = positions[randomIndex];
+            selected.add(position);
+        }
+        
+        return Array.from(selected);
+    }
+
+    async flipCover(cover, newImageUrl) {
+        try {
+            const back = cover.querySelector('.album-cover-back');
+            const newImg = await this.loadImage(newImageUrl);
+            
+            if (!back || !newImg) return;
+            
+            back.innerHTML = '';
+            back.appendChild(newImg);
+            
+            cover.classList.add('flipping');
+            
+            await new Promise(resolve => setTimeout(resolve, 600));  // 匹配CSS动画时间
+            
+            const front = cover.querySelector('.album-cover-front');
+            if (front) {
+                front.innerHTML = back.innerHTML;
+                back.innerHTML = '';
+            }
+            
+            cover.classList.remove('flipping');
+            this.imagePool.set(newImageUrl, newImg);
+        } catch (error) {
+            console.error('翻转封面失败:', error);
+            if (cover) cover.classList.remove('flipping');
+        }
+    }
+
+    cleanImagePool() {
+        if (this.imagePool.size > this.maxPoolSize) {
+            const entries = Array.from(this.imagePool.entries());
+            const toRemove = entries.slice(0, entries.length - this.maxPoolSize);
+            toRemove.forEach(([url]) => this.imagePool.delete(url));
+        }
+    }
+
+    startUpdateCycle() {
+        setInterval(() => this.updateRandomCovers(), this.updateInterval);
+    }
+
+    attemptRecovery() {
+        this.cleanImagePool();
+        this.isUpdating = false;
+        setTimeout(() => this.loadInitialCovers(), 5000);  // 5秒后尝试重新加载
+    }
+}
+
+// 初始化
+document.addEventListener('DOMContentLoaded', () => {
+    new ArtWall();
 }); 

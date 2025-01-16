@@ -1,17 +1,3 @@
-// Copyright 2020 The Appgineer
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
 "use strict";
 
 const { mkdirp } = require('mkdirp');
@@ -33,9 +19,9 @@ var skip_counter = 0;
 var total_albums = 0;
 
 var roon = new RoonApi({
-    extension_id:    'com.theappgineer.art-scraper',
-    display_name:    'Roon艺术封面墙）',
-    display_version: '2.0.3',
+    extension_id:    'com.epochaudio.coverwall',
+    display_name:    'Roon封面艺术墙',
+    display_version: '2.0.5',
     publisher:       '门耳朵',
     email:           'sales@epochaudio.cn',
     website:         'https://www.epochaudio.cn',
@@ -52,8 +38,7 @@ var roon = new RoonApi({
 
 var scrape_settings = roon.load_config("settings") || {
     image_size: 'MEDIUM',
-    max_images: 1000,
-    refresh_interval: 60 // 默认60秒
+    max_images: 1000
 };
 
 const IMAGE_SIZES = {
@@ -96,15 +81,6 @@ function makelayout(settings) {
             min:     1,
             max:     10000,
             setting: "max_images"
-        });
-
-        l.layout.push({
-            type:    "integer",
-            title:   "图片刷新间隔（秒）",
-            min:     10,
-            max:     3600,
-            setting: "refresh_interval",
-            value:   settings.refresh_interval || 60
         });
     } else {
         l.layout.push({
@@ -172,26 +148,37 @@ function scrape_library() {
 }
 
 function scrape_albums() {
+    const ALBUM_DIR = process.env.ALBUM_DIR || '/app/art/Albums';
+    
+    try {
+        fs.accessSync(ALBUM_DIR, fs.constants.W_OK);
+        startScraping();
+    } catch (err) {
+        console.error(`错误: 目录 ${ALBUM_DIR} 不存在或没有写入权限`);
+        svc_status.set_status("目录访问错误", true);
+        return;
+    }
+}
+
+function startScraping() {
     const opts = {pop_all: true};
     const path = ['Library', ALBUMS, ''];
-
-    mkdirp(process.cwd() + `/art/${ALBUMS}`).then((made) => {
-        refresh_browse(opts, path, (items, done) => {
-            const remaining = scrape_settings.max_images - album_list.length;
-            if (remaining > 0) {
-                const itemsToAdd = items.slice(0, remaining);
-                album_list = album_list.concat(itemsToAdd);
-            }
+    
+    refresh_browse(opts, path, (items, done) => {
+        const remaining = scrape_settings.max_images - album_list.length;
+        if (remaining > 0) {
+            const itemsToAdd = items.slice(0, remaining);
+            album_list = album_list.concat(itemsToAdd);
+        }
+        
+        if (done || album_list.length >= scrape_settings.max_images) {
+            total_albums = album_list.length;
+            console.log(`总共将处理 ${total_albums} 张专辑（最大限制：${scrape_settings.max_images}）`);
             
-            if (done || album_list.length >= scrape_settings.max_images) {
-                total_albums = album_list.length;
-                console.log(`总共将处理 ${total_albums} 张专辑（最大限制：${scrape_settings.max_images}）`);
-                
-                if (album_list.length > 0) {
-                    store_image(ALBUMS, album_list[album_index].title, album_list[album_index].image_key, store_next_image);
-                }
+            if (album_list.length > 0) {
+                store_image(ALBUMS, album_list[album_index].title, album_list[album_index].image_key, store_next_image);
             }
-        });
+        }
     });
 }
 
